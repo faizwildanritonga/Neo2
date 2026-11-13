@@ -1,0 +1,115 @@
+#add for board init.rc for recovery mode
+import /init.recovery.common.rc
+
+on early-fs
+start vold
+
+on fs
+start prepdecrypt 
+
+service prepdecrypt /system/bin/prepdecrypt.sh
+oneshot
+disabled
+user root
+group root
+seclabel u:r:recovery:s0
+
+service keystore2 /system/bin/keystore2 /data/misc/keystore
+user root
+group root
+disabled
+seclabel u:r:recovery:s0
+
+
+service vendor.health-default /system/bin/android.hardware.health-service.example
+class hal
+user root
+group root
+capabilities WAKE_ALARM
+file /dev/kmsg w
+seclabel u:r:recovery:s0
+    
+service keymint-2-0 /system/bin/android.hardware.security.keymint@2.0-unisoc.service.trusty
+user root
+group root drmrpc
+disabled
+seclabel u:r:recovery:s0
+
+service gatekeeper-1-0 /system/bin/android.hardware.gatekeeper@1.0-service.trusty
+class hal
+user root
+group root
+disabled
+seclabel u:r:recovery:s0
+
+
+# TEE TA supplier, stock class core service that recovery has to start itself
+service vendor.tsupplicant /system/bin/tsupplicant odm/firmware odm/firmware/fingerprint vendor/firmware
+    user system
+    group system
+    disabled
+    seclabel u:r:recovery:s0
+    setenv LD_LIBRARY_PATH /system/lib64:/system/lib64/hw
+
+service ta-supplier-wait /system/bin/start_tsupplicant.sh
+    oneshot
+    disabled
+    user root
+    group root
+    seclabel u:r:recovery:s0
+
+service storage-proxies /system/bin/start_storage_proxies.sh
+    oneshot
+    disabled
+    user root
+    group root
+    seclabel u:r:recovery:s0
+
+
+# TEE secure-storage proxies (stock storageproxyd_android.rc, class core in
+# normal boot): the gatekeeper TA reads its failure records through them.
+# start_storage_proxies.sh starts them once /data and prodnv are mounted.
+service vendor.rpmbproxy /system/bin/sprdstorageproxyd -f rpmb -d /dev/trusty-ipc-dev0 -p /data/vendor/sprd_ss
+    user root
+    group system
+    oneshot
+    disabled
+    seclabel u:r:recovery:s0
+    setenv LD_LIBRARY_PATH /system/lib64:/system/lib64/hw
+
+service vendor.nsproxy /system/bin/sprdstorageproxyd -f ns -d /dev/trusty-ipc-dev0 -p /data/vendor/sprd_ss
+    user root
+    group system
+    disabled
+    seclabel u:r:recovery:s0
+    setenv LD_LIBRARY_PATH /system/lib64:/system/lib64/hw
+
+service vendor.prodproxy /system/bin/sprdstorageproxyd -f prodnv -d /dev/trusty-ipc-dev0 -p /mnt/vendor/productinfo/sprd_ss
+    user root
+    group system
+    oneshot
+    disabled
+    seclabel u:r:recovery:s0
+    setenv LD_LIBRARY_PATH /system/lib64:/system/lib64/hw
+
+on property:crypto.ready=1
+    
+   # start storage-proxies
+   # start ta-supplier-wait
+
+on property:vendor.sprd.tsupplicant.enabled=1
+    #start vendor.tsupplicant
+
+# only once the supplier is up, the TEE asks it for the TA on connect
+on property:twrp.tsupplicant.ready=1
+
+
+on boot
+install_keyring
+start gatekeeper-1-0
+start keymint-2-0
+start boot-hal-1-2
+start health-hal-2-1
+start vendor.health-default
+ 
+ #### THIS IS FROM INIT RECOVERY COMMMON
