@@ -13,6 +13,7 @@ ALLOW_MISSING_DEPENDENCIES := true
 
 
 # Load Touch
+TW_LOAD_VENDOR_BOOT_MODULES := true
 TW_LOAD_VENDOR_MODULES := "zte_tpd.ko"
 
 
@@ -164,9 +165,6 @@ PLATFORM_VERSION_LAST_STABLE := $(PLATFORM_VERSION)
 # Properties
 TARGET_SYSTEM_PROP += $(DEVICE_PATH)/system.prop
 
-# Temp
-TW_CUSTOM_CPU_TEMP_PATH := /sys/class/thermal/thermal_zone17/temp
-TW_CUSTOM_BATTERY_PATH := /sys/class/power_supply/battery/capacity
 
 TW_BRIGHTNESS_PATH := "/sys/class/backlight/sprd_backlight/brightness"
 TW_MAX_BRIGHTNESS := 4095
@@ -175,7 +173,7 @@ TW_DEFAULT_BRIGHTNESS := 1200
 # TWRP Configuration
 TW_THEME := portrait_hdpi
 TW_EXTRA_LANGUAGES := true
-TW_SCREEN_BLANK_ON_BOOT := true
+TW_NO_SCREEN_BLANK_ON_BOOT := true
 TW_INPUT_BLACKLIST := "hbtp_vm"
 TW_USE_TOOLBOX := true
 TW_INCLUDE_REPACKTOOLS := true
