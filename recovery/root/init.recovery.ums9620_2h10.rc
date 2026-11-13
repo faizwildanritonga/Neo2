@@ -46,7 +46,7 @@ seclabel u:r:recovery:s0
 
 
 on boot
-#install_keyring
+install_keyring
 start gatekeeper-1-0
 start keymint-2-0
 start boot-hal-1-2
